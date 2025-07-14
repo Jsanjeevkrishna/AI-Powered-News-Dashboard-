@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI News Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .news-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        .category-btn.active {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .skeleton-loader {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        .ai-summary {
+            position: relative;
+        }
+        .ai-summary::before {
+            content: "🤖 AI Summary";
+            position: absolute;
+            top: -12px;
+            left: 10px;
+            background: white;
+            padding: 0 8px;
+            font-size: 12px;
+            color: #3b82f6;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-center mb-8">
+            <div class="flex items-center mb-4 md:mb-0">
+                <i class="fas fa-robot text-3xl text-blue-500 mr-3"></i>
+                <h1 class="text-3xl font-bold text-gray-800">AI News Dashboard</h1>
+            </div>
+            
+            <div class="relative w-full md:w-64">
+                <input type="text" placeholder="Search news..." 
+                       class="w-full px-4 py-2 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <i class="fas fa-search absolute right-3 top-2.5 text-gray-400"></i>
+            </div>
+        </header>
+
+        <!-- AI Summary Section -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-8 ai-summary">
+            <div class="flex items-start">
+                <div class="bg-blue-100 p-3 rounded-full mr-4">
+                    <i class="fas fa-brain text-blue-500 text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg mb-2">Today's AI-Powered News Summary</h3>
+                    <p id="ai-summary-text" class="text-gray-700">Loading AI-generated summary of today's top stories...</p>
+                    <div class="flex justify-end mt-2">
+                        <button id="refresh-summary" class="text-blue-500 text-sm flex items-center">
+                            <i class="fas fa-sync-alt mr-1"></i> Regenerate
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Categories -->
+        <div class="flex overflow-x-auto pb-4 mb-6 scrollbar-hide">
+            <div class="flex space-x-2">
+                <button class="category-btn active px-4 py-2 rounded-full bg-blue-100 text-blue-600 font-medium">All</button>
+                <button class="category-btn px-4 py-2 rounded-full bg-gray-100 text-gray-600 font-medium">Technology</button>
+                <button class="category-btn px-4 py-2 rounded-full bg-gray-100 text-gray-600 font-medium">Business</button>
+                <button class="category-btn px-4 py-2 rounded-full bg-gray-100 text-gray-600 font-medium">Science</button>
+                <button class="category-btn px-4 py-2 rounded-full bg-gray-100 text-gray-600 font-medium">Health</button>
+                <button class="category-btn px-4 py-2 rounded-full bg-gray-100 text-gray-600 font-medium">Entertainment</button>
+                <button class="category-btn px-4 py-2 rounded-full bg-gray-100 text-gray-600 font-medium">Sports</button>
+            </div>
+        </div>
+
+        <!-- News Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="news-container">
+            <!-- Skeleton Loaders -->
+            <div class="bg-white rounded-xl shadow-md overflow-hidden skeleton-loader" style="height: 380px;"></div>
+            <div class="bg-white rounded-xl shadow-md overflow-hidden skeleton-loader" style="height: 380px;"></div>
+            <div class="bg-white rounded-xl shadow-md overflow-hidden skeleton-loader" style="height: 380px;"></div>
+        </div>
+
+        <!-- Load More Button -->
+        <div class="flex justify-center mt-8">
+            <button id="load-more" class="px-6 py-3 bg-blue-500 text-white rounded-full font-medium hover:bg-blue-600 transition-colors">
+                Load More News
+            </button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Mock AI Summary
+            const aiSummaries = [
+                "Today's top stories include breakthroughs in quantum computing, the latest tech IPO performances, and new climate change initiatives. AI analysis suggests tech stocks may rally this week based on sentiment analysis.",
+                "Our AI detected trending topics in healthcare innovation and space exploration. The most shared article discusses neural interface technology that could revolutionize how we interact with devices.",
+                "Sentiment analysis shows positive trends in renewable energy coverage, while political news remains polarized. The AI recommends focusing on science and tech stories for balanced perspectives today."
+            ];
+            
+            const aiSummaryText = document.getElementById('ai-summary-text');
+            const refreshSummaryBtn = document.getElementById('refresh-summary');
+            
+            // Set initial summary
+            aiSummaryText.textContent = aiSummaries[0];
+            
+            // Refresh summary
+            refreshSummaryBtn.addEventListener('click', function() {
+                aiSummaryText.textContent = "Generating new summary...";
+                setTimeout(() => {
+                    const randomIndex = Math.floor(Math.random() * aiSummaries.length);
+                    aiSummaryText.textContent = aiSummaries[randomIndex];
+                }, 1500);
+            });
+            
+            // Category buttons
+            const categoryBtns = document.querySelectorAll('.category-btn');
+            categoryBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    categoryBtns.forEach(b => b.classList.remove('active', 'bg-blue-100', 'text-blue-600'));
+                    this.classList.add('active', 'bg-blue-100', 'text-blue-600');
+                    loadNews(this.textContent.trim());
+                });
+            });
+            
+            // Mock news data
+            const mockNews = [
+                {
+                    title: "AI Breakthrough Allows Computers to Understand Human Emotions",
+                    source: "Tech Future",
+                    time: "2 hours ago",
+                    category: "Technology",
+                    summary: "Researchers have developed an AI system that can accurately detect human emotions from voice patterns with 92% accuracy, opening new possibilities for mental health applications.",
+                    image: "https://source.unsplash.com/random/600x400/?ai,technology"
+                },
+                {
+                    title: "Global Markets Rally as Inflation Fears Ease",
+                    source: "Financial Times",
+                    time: "5 hours ago",
+                    category: "Business",
+                    summary: "Stock markets worldwide saw significant gains today after central bank officials signaled a more cautious approach to interest rate hikes.",
+                    image: "https://source.unsplash.com/random/600x400/?stock,market"
+                },
+                {
+                    title: "New Study Reveals Benefits of Mediterranean Diet",
+                    source: "Health Journal",
+                    time: "8 hours ago",
+                    category: "Health",
+                    summary: "A 10-year study confirms that adherence to Mediterranean diet patterns reduces heart disease risk by 30% and may slow cognitive decline in older adults.",
+                    image: "https://source.unsplash.com/random/600x400/?food,health"
+                },
+                {
+                    title: "NASA Announces New Mars Rover Mission for 2026",
+                    source: "Space Today",
+                    time: "1 day ago",
+                    category: "Science",
+                    summary: "The new rover will focus on searching for signs of ancient microbial life and testing technologies for future human exploration of the Red Planet.",
+                    image: "https://source.unsplash.com/random/600x400/?mars,space"
+                },
+                {
+                    title: "Streaming Giant Announces Original Content Slate",
+                    source: "Entertainment Weekly",
+                    time: "1 day ago",
+                    category: "Entertainment",
+                    summary: "The platform revealed 50 new original series and films coming in the next year, with a focus on diverse storytelling and international productions.",
+                    image: "https://source.unsplash.com/random/600x400/?movie,camera"
+                },
+                {
+                    title: "Underdog Team Wins Championship in Historic Upset",
+                    source: "Sports Network",
+                    time: "2 days ago",
+                    category: "Sports",
+                    summary: "In what analysts are calling the greatest upset in decades, the underfunded team defeated the reigning champions with a last-minute score.",
+                    image: "https://source.unsplash.com/random/600x400/?soccer,stadium"
+                }
+            ];
+            
+            // Load news function
+            function loadNews(category = 'All') {
+                const newsContainer = document.getElementById('news-container');
+                newsContainer.innerHTML = '';
+                
+                // Filter news by category
+                const filteredNews = category === 'All' 
+                    ? mockNews 
+                    : mockNews.filter(item => item.category === category);
+                
+                // Add news cards
+                filteredNews.forEach(news => {
+                    const newsCard = document.createElement('div');
+                    newsCard.className = 'bg-white rounded-xl shadow-md overflow-hidden news-card transition-all duration-300';
+                    newsCard.innerHTML = `
+                        <img src="${news.image}" alt="${news.title}" class="w-full h-48 object-cover">
+                        <div class="p-6">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-sm font-medium text-blue-500">${news.category}</span>
+                                <span class="text-xs text-gray-500">${news.time}</span>
+                            </div>
+                            <h3 class="text-xl font-bold mb-2 line-clamp-2">${news.title}</h3>
+                            <p class="text-gray-600 text-sm mb-4 line-clamp-2">${news.summary}</p>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-500">${news.source}</span>
+                                <button class="text-blue-500 hover:text-blue-700">
+                                    <i class="fas fa-arrow-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    newsContainer.appendChild(newsCard);
+                });
+            }
+            
+            // Initial load
+            setTimeout(() => {
+                loadNews();
+            }, 1000);
+            
+            // Load more button
+            document.getElementById('load-more').addEventListener('click', function() {
+                this.textContent = "Loading...";
+                setTimeout(() => {
+                    // In a real app, this would fetch more data
+                    this.textContent = "No more news to load";
+                    this.disabled = true;
+                }, 1500);
+            });
+            
+            // Simulate AI analyzing news (just for demo)
+            setTimeout(() => {
+                const analyzingDiv = document.createElement('div');
+                analyzingDiv.className = 'fixed bottom-4 right-4 bg-white shadow-lg rounded-lg p-4 flex items-center';
+                analyzingDiv.innerHTML = `
+                    <div class="animate-pulse mr-3">
+                        <i class="fas fa-brain text-blue-500"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium">AI analyzing trending patterns...</p>
+                        <p class="text-xs text-gray-500">Updated 10 seconds ago</p>
+                    </div>
+                `;
+                document.body.appendChild(analyzingDiv);
+                
+                // Remove after some time
+                setTimeout(() => {
+                    analyzingDiv.remove();
+                }, 5000);
+            }, 3000);
+        });
+    </script>
+</body>
+</html>
